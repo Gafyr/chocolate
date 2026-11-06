@@ -1,6 +1,15 @@
 from sqlalchemy import Column, Integer, String, DateTime
 from database import Base
 import datetime
+from sqlalchemy import Column, Integer, String
+from database import Base
+
+class Stock(Base):
+    __tablename__ = "stocks"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    item = Column(String, unique=True, index=True)
+    quantity = Column(Integer, default=0)
 
 class Material(Base):
     __tablename__ = "materials"
