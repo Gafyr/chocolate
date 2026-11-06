@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Chocolate Factory - Mini-MRP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-amber-50 min-h-screen flex flex-col justify-between">
+    <header class="bg-amber-900 text-white py-4 shadow-md">
+        <div class="container mx-auto px-6 flex justify-between items-center">
+            <h1 class="text-xl font-bold flex items-center gap-2">
+                🍫 The Chocolate Factory <span class="text-xs bg-amber-700 px-2 py-1 rounded">Mini-MRP</span>
+            </h1>
+            <span class="text-sm bg-emerald-600 px-3 py-1 rounded-full">Tizim ulangan</span>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 py-8 max-w-4xl flex-grow">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-amber-200">
+                <h3 class="text-gray-500 text-sm font-medium">Kakao Zaxirasi</h3>
+                <p class="text-3xl font-bold text-amber-900 mt-2"><span id="cocoa-stock">500</span> g</p>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-amber-200">
+                <h3 class="text-gray-500 text-sm font-medium">Shakar Zaxirasi</h3>
+                <p class="text-3xl font-bold text-amber-900 mt-2"><span id="sugar-stock">200</span> g</p>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-amber-200">
+                <h3 class="text-gray-500 text-sm font-medium">Qora Shokolad</h3>
+                <p class="text-3xl font-bold text-emerald-700 mt-2"><span id="chocolate-stock">0</span> dona</p>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-amber-200 mb-8 flex justify-between items-center">
+            <div>
+                <h2 class="text-lg font-semibold text-gray-800">Ishlab chiqarish</h2>
+                <p class="text-sm text-gray-500">1 ta shokolad = 50g kakao + 20g shakar</p>
+            </div>
+            <button onclick="produceChocolate()" class="bg-amber-800 hover:bg-amber-900 text-white font-medium px-6 py-3 rounded-lg shadow cursor-pointer">
+                ✨ Produce
+            </button>
+        </div>
+
+        <div id="alert-box" class="hidden p-4 mb-6 rounded-lg text-sm"></div>
+
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-amber-200">
+            <h3 class="text-md font-semibold text-gray-800 mb-4">Tarix</h3>
+            <table class="w-full text-left text-sm">
+                <thead>
+                    <tr class="border-b text-gray-500">
+                        <th class="py-2">Vaqt</th>
+                        <th class="py-2">Amal</th>
+                        <th class="py-2">Holat</th>
+                    </tr>
+                </thead>
+                <tbody id="log-table-body">
+                    <tr><td colspan="3" class="py-3 text-center text-gray-400">Hozircha amallar yo'q</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script>
+        async function fetchStatus() {
+            let res = await fetch('/api/stock');
+            let data = await res.json();
+            document.getElementById('cocoa-stock').innerText = data.cocoa;
+            document.getElementById('sugar-stock').innerText = data.sugar;
+            document.getElementById('chocolate-stock').innerText = data.chocolate;
+        }
+
+        async function produceChocolate() {
+            let res = await fetch('/api/produce', { method: 'POST' });
+            let data = await res.json();
+            if (!res.ok) {
+                showAlert(data.detail, 'error');
+            } else {
+                showAlert(data.message, 'success');
+                fetchStatus();
+                loadLogs();
+            }
+        }
+
+        async function loadLogs() {
+            let res = await fetch('/api/logs');
+            let logs = await res.json();
+            const tbody = document.getElementById('log-table-body');
+            if (logs.length === 0) return;
+            tbody.innerHTML = logs.map(l => `
+                <tr class="border-b">
+                    <td class="py-2 text-gray-600">${l.time}</td>
+                    <td class="py-2 text-gray-800">${l.action}</td>
+                    <td class="py-2"><span class="px-2 py-1 rounded text-xs ${l.status === 'SUCCESS' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}">${l.status}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        function showAlert(msg, type) {
+            const box = document.getElementById('alert-box');
+            box.className = `p-4 mb-6 rounded-lg text-sm ${type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'}`;
+            box.innerText = msg;
+            setTimeout(() => box.classList.add('hidden'), 4000);
+        }
+
+        fetchStatus();
+        loadLogs();
+    </script>
+</body>
+</html>
